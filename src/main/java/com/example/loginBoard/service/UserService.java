@@ -2,14 +2,18 @@ package com.example.loginBoard.service;
 
 import com.example.loginBoard.model.domain.User;
 import com.example.loginBoard.model.dto.user.IdDto;
+import com.example.loginBoard.model.dto.user.LoginDto;
 import com.example.loginBoard.model.dto.user.NicknameDto;
 import com.example.loginBoard.model.dto.user.UserDto;
 import com.example.loginBoard.repository.UserRepository;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 
@@ -44,5 +48,20 @@ public class UserService {
                 .build();
 
         return repository.save(user);
+    }
+
+    public boolean login(LoginDto response) {
+        String id = response.getId();
+        String password = response.getPassword();
+
+        return repository.findFirstByIdAndPassword(id, password).isPresent();
+    }
+
+    public boolean checkStatus(IdDto id, String status) {
+        return repository.findFirstByIdAndStatus(id.getId(), status).isPresent();
+    }
+
+    public void changeStatus(IdDto id, String status) {
+        repository.setStatus(status, id.getId());
     }
 }

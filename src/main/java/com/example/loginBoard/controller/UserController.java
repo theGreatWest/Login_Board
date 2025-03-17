@@ -24,10 +24,11 @@ public class UserController {
     private final EmailService emailService;
 
     private CertificationDto authenticationNumber;
+    private int loginCount;
 
     // 회원 전체 보기
     @GetMapping("view_all")
-    public List<User> viewAllUsers(){
+    public List<User> viewAllUsers() {
         return service.viewAllUsers();
     }
 
@@ -36,11 +37,11 @@ public class UserController {
     @PostMapping("/check_id")
     public IdDto checkId(
             @Valid @RequestBody IdDto request
-            ) {
+    ) {
 
-        log.info("입력된 ID : {}\n",request.toString());
+        log.info("입력된 ID : {}\n", request.toString());
 
-        if(!service.checkIdDuplication(request)) return request;
+        if (!service.checkIdDuplication(request)) return request;
         else return null; // 다시 입력 받아야 함
     }
 
@@ -60,21 +61,21 @@ public class UserController {
     @PostMapping("/check_password")
     public PasswordDto check_password(
             @Valid @RequestBody PasswordDto request
-    ){
-        String regex = ".*[!~*^].*";
+    ) {
+//        String regex = ".*[!~*^].*";
 
         log.info("입력된 Password : {}\n", request.toString());
 
-        if(request.getPassword().matches(regex)) return request;
+//        if(request.getPassword().matches(regex)) return request;
 
-        return null;
+        return request;
     }
 
     // 핸드폰 번호 확인 - 본인인증 + 인증 번호 다시 보내기 클릭 시 실행
     @PostMapping("/check_phone")
     public CertificationDto check_phone(
             @Valid @RequestBody PhoneDto request
-    ){
+    ) {
         log.info("입력된 phone number : {}\n", request.toString());
 
         authenticationNumber = SmsService.send(request.getFull());
@@ -87,7 +88,7 @@ public class UserController {
     @PostMapping("/check_email")
     public CertificationDto check_email(
             @Valid @RequestBody EmailDto request
-    ){
+    ) {
         log.info("입력된 email : {}\n", request.getFull());
 
         authenticationNumber = emailService.sendVerificationEmail(request.getFull());
@@ -99,7 +100,7 @@ public class UserController {
     @PostMapping("/authentication_confirm")
     public boolean authentication(
             @RequestParam String inputNumber
-    ){
+    ) {
         inputNumber = inputNumber.trim();
 
         boolean result = authenticationNumber.getCertificationNumber().equals(inputNumber);
@@ -113,9 +114,40 @@ public class UserController {
     @PostMapping("/signup")
     public User signup(
             @Valid @RequestBody UserDto request
-    ){
+    ) {
         log.info("입력된 회원 정보 : {}\n", request);
 
         return service.signup(request);
+    }
+
+    // 로그인
+    // 일치 :
+    // 불일치 : 5회 이상 잘못 입력한 경우 계정 잠금(status -> INACTIVE) + 본인 인증 완료해야 비밀번호 재설정 가능
+    @PostMapping("/login")
+    public boolean login(
+            @Valid @RequestBody LoginDto request
+    ) {
+        IdDto user = IdDto.builder()
+                .id(request.getId())
+                .build();
+
+        if (service.login(request)) {
+            if(service.checkStatus(user, "ACTIVE")) {
+                loginCount  = 0;
+                return true;
+            }
+
+            log.info("📍비밀번호 재설정");
+            return false;
+        }
+
+        loginCount++;
+        log.info("로그인 시도 횟수 : {}",loginCount);
+
+        if(loginCount == 5){
+            loginCount = 0;
+            service.changeStatus(user, "INACTIVE");
+        }
+        return false;
     }
 }

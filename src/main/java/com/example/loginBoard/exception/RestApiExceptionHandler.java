@@ -1,10 +1,12 @@
 package com.example.loginBoard.exception;
 
 import com.example.loginBoard.model.dto.Api;
+import jakarta.validation.ConstraintDefinitionException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -37,6 +39,24 @@ public class RestApiExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
                 .body(response);
+    }
+
+    @ExceptionHandler(value = {ConstraintDefinitionException.class})
+    public ResponseEntity constraintDefinitionException(
+            ConstraintDefinitionException e
+    ){
+        log.error("ConstraintDefinitionException", e);
+
+        return ResponseEntity.status(200).build();
+    }
+
+    @ExceptionHandler(value = {MethodArgumentNotValidException.class})
+    public ResponseEntity methodArgumentNotValidException(
+            MethodArgumentNotValidException e
+    ){
+        log.error("MethodArgumentNotValidException");
+
+        return ResponseEntity.status(200).build();
     }
 
 }
