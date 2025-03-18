@@ -1,10 +1,7 @@
 package com.example.loginBoard.service;
 
 import com.example.loginBoard.model.domain.User;
-import com.example.loginBoard.model.dto.user.IdDto;
-import com.example.loginBoard.model.dto.user.LoginDto;
-import com.example.loginBoard.model.dto.user.NicknameDto;
-import com.example.loginBoard.model.dto.user.UserDto;
+import com.example.loginBoard.model.dto.user.*;
 import com.example.loginBoard.repository.UserRepository;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +21,10 @@ public class UserService {
 
     public List<User> viewAllUsers(){
         return repository.findAll();
+    }
+
+    public Optional<User> viewTargetUser(IdDto request){
+        return repository.findFirstById(request.getId());
     }
 
     public boolean checkIdDuplication(IdDto request) {
@@ -63,5 +64,9 @@ public class UserService {
 
     public void changeStatus(IdDto id, String status) {
         repository.setStatus(status, id.getId());
+    }
+
+    public void changePassword(LoginDto loginDto){
+        repository.setPassword(loginDto.getId(), loginDto.getPassword());
     }
 }

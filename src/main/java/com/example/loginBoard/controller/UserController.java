@@ -32,6 +32,21 @@ public class UserController {
         return service.viewAllUsers();
     }
 
+    // ID로 조회하기
+    @PostMapping("view_target")
+    public User viewTarget(
+            @Valid @RequestBody IdDto request
+    ){
+        var user = service.viewTargetUser(request);
+
+        if(user.isPresent()) {
+            log.info("{}", user);
+            return user.get();
+        }
+
+        return null;
+    }
+
     // 아이디 중복 여부 체크
     // 최소 4글자 체크
     @PostMapping("/check_id")
@@ -59,7 +74,7 @@ public class UserController {
 
     // 비밀번호에 !, *, ~, ^ 포함되는지 확인 -- 이 부분은 그냥 js 로 할 수 있을 것 같다.
     @PostMapping("/check_password")
-    public PasswordDto check_password(
+    public PasswordDto checkPassword(
             @Valid @RequestBody PasswordDto request
     ) {
 //        String regex = ".*[!~*^].*";
@@ -73,7 +88,7 @@ public class UserController {
 
     // 핸드폰 번호 확인 - 본인인증 + 인증 번호 다시 보내기 클릭 시 실행
     @PostMapping("/check_phone")
-    public CertificationDto check_phone(
+    public CertificationDto checkPhone(
             @Valid @RequestBody PhoneDto request
     ) {
         log.info("입력된 phone number : {}\n", request.toString());
@@ -86,7 +101,7 @@ public class UserController {
 
     // 이메일 확인 - 본인인증 + 인증 번호 다시 보내기 클릭 시 실행
     @PostMapping("/check_email")
-    public CertificationDto check_email(
+    public CertificationDto checkEmail(
             @Valid @RequestBody EmailDto request
     ) {
         log.info("입력된 email : {}\n", request.getFull());
@@ -137,7 +152,7 @@ public class UserController {
                 return true;
             }
 
-            log.info("📍비밀번호 재설정");
+            log.info("📍비활성화 계정입니다.");
             return false;
         }
 
@@ -147,7 +162,19 @@ public class UserController {
         if(loginCount == 5){
             loginCount = 0;
             service.changeStatus(user, "INACTIVE");
+            log.info("📍계정이 비활성화 되었습니다. 본인 인증을 통해 계정을 활성화 할 수 있습니다.");
         }
         return false;
     }
+
+    // 비밀번호 재설정
+    @PostMapping("/update_password")
+    public void updatePassword(
+            @Valid @RequestBody LoginDto request
+    ){
+        // 핸드폰과 이메일 본인 인증 중 택 1 -> 인증 코드 받아 본인인증 완료되면 해당 메서드 실행
+        // 아이디가 존재하는지 확인 -> 존재한다면 id 확인 후 비밀번호 재설정
+        service.changePassword(request);
+    }
+
 }
