@@ -10,7 +10,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RequiredArgsConstructor
 
@@ -23,7 +25,7 @@ public class UserController {
     private final UserService service;
     private final EmailService emailService;
 
-    private CertificationDto authenticationNumber;
+    private Map<String, String> authenticationNumber = new HashMap<>();
     private int loginCount;
 
     // 회원 전체 보기
@@ -56,7 +58,10 @@ public class UserController {
 
         log.info("입력된 ID : {}\n", request.toString());
 
-        if (!service.checkIdDuplication(request)) return request;
+        if (!service.checkIdDuplication(request)) {
+            authenticationNumber.put(request.getId(), null);
+            return request;
+        }
         else return null; // 다시 입력 받아야 함
     }
 
@@ -93,10 +98,10 @@ public class UserController {
     ) {
         log.info("입력된 phone number : {}\n", request.toString());
 
-        authenticationNumber = SmsService.send(request.getFull());
-        // 인증번호와 사용자가 입력한 값을 대조해 비교해야 한다.
+        CertificationDto certification = SmsService.send(request.getId().trim(), request.getPhoneFull());
+        authenticationNumber.put(certification.getId().trim(), certification.getCertificationNumber());
 
-        return authenticationNumber;
+        return certification;
     }
 
     // 이메일 확인 - 본인인증 + 인증 번호 다시 보내기 클릭 시 실행
@@ -106,19 +111,20 @@ public class UserController {
     ) {
         log.info("입력된 email : {}\n", request.getFull());
 
-        authenticationNumber = emailService.sendVerificationEmail(request.getFull());
+        CertificationDto certification = emailService.sendVerificationEmail(request.getId().trim(), request.getFull());
+        authenticationNumber.put(certification.getId().trim(), certification.getCertificationNumber());
 
-        return authenticationNumber;
+        return certification;
     }
 
     // 핸드폰, 이메일 등 본인 인증 -> 인증 번호를 입력 후 일치하는지 확인: 일치하면 본인 인증 완료
     @PostMapping("/authentication_confirm")
     public boolean authentication(
-            @RequestParam String inputNumber
+           @Valid @RequestBody CertificationDto request
     ) {
-        inputNumber = inputNumber.trim();
+        String inputNumber = request.getCertificationNumber().trim();
 
-        boolean result = authenticationNumber.getCertificationNumber().equals(inputNumber);
+        boolean result = authenticationNumber.get(request.getId().trim()).equals(inputNumber);
 
         log.info("핸드폰 번호 인증 결과 : {}", result);
 
@@ -175,6 +181,25 @@ public class UserController {
         // 핸드폰과 이메일 본인 인증 중 택 1 -> 인증 코드 받아 본인인증 완료되면 해당 메서드 실행
         // 아이디가 존재하는지 확인 -> 존재한다면 id 확인 후 비밀번호 재설정
         service.changePassword(request);
+    }
+
+    // 아이디 찾기
+    // 등록된 핸드폰 또는 이메일으로 본인 인증 진행 -> 성공 시, 선택한 인증 수단으로 아이디 전송
+    @PostMapping("/find_id_email")
+    public IdDto findIdEmail(
+            @Valid @RequestBody EmailDto request
+    ){
+        // 본인인증 성공 시, 이메일로 아이디 전송
+        FindIdDto idDto = service.findId(request);
+        if(idDto!=null){
+            FindIdDto findIdDto = FindIdDto.builder()
+                    .id(idDto.getId())
+//                    .email()
+                    .build();
+//            return emailService.sendId(idDto);
+        }
+
+        return null;
     }
 
 }
