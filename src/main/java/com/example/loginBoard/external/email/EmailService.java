@@ -40,19 +40,17 @@ public class EmailService {
     private String generateVerificationCode() {
         return String.format("%06d", new Random().nextInt(1000000)); // 6자리 랜덤 숫자 생성
     }
-//
-//    public IdDto sendId(IdDto idDto, String email) {
-//        SimpleMailMessage msg = new SimpleMailMessage();
-//        msg.setTo(email);
-//        msg.setSubject("이메일 인증 코드");
-//        msg.setText("인증 코드: " + code);
-//
-//        mailSender.send(msg);
-//
-//        log.info("인증 코드 이메일 전송 : {}", "인증 코드 전송 완료!");
-//
-//        return CertificationDto.builder()
-//                .certificationNumber(code)
-//                .build();
-//    }
+
+    public String sendId(String id, String email) {
+        SimpleMailMessage msg = new SimpleMailMessage();
+        msg.setTo(email);
+        msg.setSubject("아이디 찾기");
+        msg.setText("아이디: " + id);
+
+        mailSender.send(msg);
+
+        log.info("아이디/비밀번호 찾기 이메일 전송 : {}", "발송 성공");
+
+        return id;
+    }
 }

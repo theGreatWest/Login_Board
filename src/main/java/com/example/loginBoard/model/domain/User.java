@@ -13,6 +13,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.beans.Transient;
 import java.time.LocalDateTime;
 
 @Data
@@ -53,4 +54,9 @@ public class User {
 
     @NotBlank
     private String status;
+
+    @Transient
+    public String getPhoneFull() {
+        return "+82" + this.phone1.substring(1, 3) + this.phone2 + this.phone3;
+    }
 }

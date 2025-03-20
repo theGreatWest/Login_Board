@@ -183,23 +183,54 @@ public class UserController {
         service.changePassword(request);
     }
 
-    // 아이디 찾기
+    // 아이디 찾기 : 핸드폰 번호 인증
     // 등록된 핸드폰 또는 이메일으로 본인 인증 진행 -> 성공 시, 선택한 인증 수단으로 아이디 전송
-    @PostMapping("/find_id_email")
-    public IdDto findIdEmail(
-            @Valid @RequestBody EmailDto request
+    @PostMapping("/find_id_phone")
+    public FindIdDto findIdPhone(
+            @Valid @RequestBody PhoneDto request
     ){
-        // 본인인증 성공 시, 이메일로 아이디 전송
-        FindIdDto idDto = service.findId(request);
-        if(idDto!=null){
-            FindIdDto findIdDto = FindIdDto.builder()
-                    .id(idDto.getId())
-//                    .email()
-                    .build();
-//            return emailService.sendId(idDto);
+        FindIdDto user = service.findIdByPhone(request);
+
+        if(user==null){
+            log.info("등록되지 않은 번호입니다.");
+            return null;
         }
 
-        return null;
+        SmsService.sendId(convertValue(user.getId()), user.getPhone());
+
+        return user;
+    }
+
+    // 아이디 찾기 : 이메일 인증
+    // 등록된 핸드폰 또는 이메일으로 본인 인증 진행 -> 성공 시, 선택한 인증 수단으로 아이디 전송
+    @PostMapping("/find_id_email")
+    public FindIdDto findIdEmail(
+            @Valid @RequestBody EmailDto request
+    ){
+        FindIdDto user = service.findIdByEmail(request);
+
+        if(user==null){
+            log.info("등록되지 않은 이메일 주소입니다.");
+            return null;
+        }
+
+        emailService.sendId(convertValue(user.getId()), user.getEmail());
+
+        return user;
+    }
+
+    private String convertValue(String value){
+        StringBuilder sb = new StringBuilder();
+
+        int size = value.length();
+        int start = size/3, end = size/2 + start - 1;
+
+        for(int i=0;i<size;i++){
+            if(i>=start && i<=end) sb.append("*");
+            else sb.append(value.charAt(i));
+        }
+
+        return sb.toString();
     }
 
 }

@@ -13,7 +13,6 @@ import lombok.NoArgsConstructor;
 @Builder
 public class EmailDto {
     @Id
-    @NotBlank
     private String id;
 
     @NotBlank

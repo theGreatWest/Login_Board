@@ -19,11 +19,11 @@ public class UserService {
 
     private final UserRepository repository;
 
-    public List<User> viewAllUsers(){
+    public List<User> viewAllUsers() {
         return repository.findAll();
     }
 
-    public Optional<User> viewTargetUser(IdDto request){
+    public Optional<User> viewTargetUser(IdDto request) {
         return repository.findFirstById(request.getId());
     }
 
@@ -35,7 +35,7 @@ public class UserService {
         return repository.findFirstByNickname(request.getNickname().trim()).isPresent();
     }
 
-    public User signup(UserDto request){
+    public User signup(UserDto request) {
         User user = User.builder()
                 .id(request.getId().trim())
                 .password(request.getPassword().trim())
@@ -66,7 +66,29 @@ public class UserService {
         repository.setStatus(status, id.getId());
     }
 
-    public void changePassword(LoginDto loginDto){
+    public void changePassword(LoginDto loginDto) {
         repository.setPassword(loginDto.getId(), loginDto.getPassword());
+    }
+
+    public FindIdDto findIdByEmail(EmailDto emailDto) {
+        var user = repository.findFirstByEmail(emailDto.getFull());
+
+        return user.map(value ->
+                FindIdDto.builder()
+                        .id(value.getId())
+                        .email(value.getEmail())
+                        .build()
+        ).orElse(null);
+    }
+
+    public FindIdDto findIdByPhone(PhoneDto phoneDto) {
+        var user = repository.findFirstByPhone1AndPhone2AndPhone3(phoneDto.getPhone1(), phoneDto.getPhone2(), phoneDto.getPhone3());
+
+        return user.map(value ->
+                FindIdDto.builder()
+                        .id(value.getId())
+                        .phone(value.getPhoneFull())
+                        .build()
+        ).orElse(null);
     }
 }
