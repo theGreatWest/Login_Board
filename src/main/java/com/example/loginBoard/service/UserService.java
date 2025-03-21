@@ -6,9 +6,13 @@ import com.example.loginBoard.repository.UserRepository;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
@@ -90,5 +94,23 @@ public class UserService {
                         .phone(value.getPhoneFull())
                         .build()
         ).orElse(null);
+    }
+
+    @Scheduled(cron = "0 0 0 * * ?") // 매일 자정 00:00 에 실행되는 메서드
+//    @Scheduled(cron = "0 57 12 * * ?") // 매일 12 : 37분 에 실행되는 메서드
+//    @Scheduled(fixedRate = 50000) // 10초마다 실행 : 개발할 때만 이용
+//    @Scheduled(cron = "0 30 14 * * ?") // 매일 오후 2시 30분 실행
+//    @Scheduled(cron = "0 0 12 ? * MON") // 매주 월요일 12시 실행
+//    @Scheduled(fixedDelay = 5000) // 이전 작업이 끝난 후 5초 뒤 실행
+//    @Scheduled(fixedRate = 5000, initialDelay = 10000) // 10초 후 첫 실행, 이후 5초마다 실행
+    public void runEveryMidnight() {
+
+        LocalDateTime oneYearAge = LocalDateTime.now().minusYears(1);
+
+        repository.findAll().stream()
+                .filter(user -> user.getLastLoginAt().isBefore(oneYearAge))
+                .forEach(user -> {
+                    if (user.getStatus().equals("ACTIVE")) repository.setStatus("INACTIVE", user.getId());
+                });
     }
 }
